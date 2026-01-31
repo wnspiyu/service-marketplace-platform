@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: marketplace_postgres
+    environment:
+      POSTGRES_DB: service_marketplace_db
+      POSTGRES_USER: marketplace_admin
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      - ./seed-data.sql:/docker-entrypoint-initdb.d/03-seed-data.sql
+    networks:
+      - marketplace_network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: marketplace_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@marketplace.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - marketplace_network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  marketplace_network:
+    driver: bridge
