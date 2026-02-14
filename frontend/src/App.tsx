@@ -1,25 +1,79 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+import { UserType } from './types/user';
+import { AuthProvider } from './context/AuthContext';
+import 'leaflet/dist/leaflet.css';
+
+// Pages
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+// import VerifyEmailPage from './pages/VerifyEmailPage';
+import CustomerDashboard from './pages/customer/Dashboard';
+// import CreateTaskPage from './pages/customer/CreateTask';
+// import TaskDetailsPage from './pages/customer/TaskDetails';
+import ProviderDashboard from './pages/provider/Dashboard';
+// import NotificationsPage from './pages/provider/Notifications';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+        <AuthProvider>
+          <Navbar />
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+
+
+            {/* Customer Routes */}
+            <Route
+              path="/customer/dashboard"
+              element={
+                <ProtectedRoute requiredRole={UserType.CUSTOMER}>
+                  <CustomerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customer/create-task"
+              element={
+                <ProtectedRoute requiredRole={UserType.CUSTOMER}>
+
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customer/tasks/:taskId"
+              element={
+                <ProtectedRoute requiredRole={UserType.CUSTOMER}>
+
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Provider Routes */}
+            <Route
+              path="/provider/dashboard"
+              element={
+                <ProtectedRoute requiredRole={UserType.SERVICE_PROVIDER}>
+                  <ProviderDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/provider/notifications"
+              element={
+                <ProtectedRoute requiredRole={UserType.SERVICE_PROVIDER}>
+
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="/" element={<Navigate to="/login" />} />
+          </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
