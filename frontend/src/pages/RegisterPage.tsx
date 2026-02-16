@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
+import { taskService } from '../services/taskService';
+import { ServiceCategory } from '../types/task';
 import { UserType } from '../types/user';
 
 /**
@@ -10,7 +12,7 @@ import { UserType } from '../types/user';
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
-  const [userType, setUserType] = useState<'CUSTOMER' | 'PROVIDER'>('CUSTOMER');
+  const [userType, setUserType] = useState<'customer' | 'provider'>('customer');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22,10 +24,31 @@ const RegisterPage: React.FC = () => {
     categoryId: '',
     latitude: '',
     longitude: '',
+    businessName: '',
+    bio: '',
+    yearsOfExperience: '',
+    serviceRadiusKm: '',
   });
   const [errors, setErrors] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+
+  useEffect(() => {
+    if (userType === 'provider') {
+      loadCategories();
+    }
+  }, [userType]);
+
+  const loadCategories = async () => {
+    try {
+      const data = await taskService.getAllCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
+  };
 
   /**
    * Handle input change
@@ -79,7 +102,7 @@ const RegisterPage: React.FC = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    if (userType === 'PROVIDER') {
+    if (userType === 'provider') {
       if (!formData.phoneNumber) {
         newErrors.phoneNumber = 'Phone number is required for providers';
       } else if (!/^[0-9]{10,15}$/.test(formData.phoneNumber)) {
@@ -122,7 +145,7 @@ const RegisterPage: React.FC = () => {
 
     try {
       let response;
-      if (userType === 'CUSTOMER') {
+      if (userType === 'customer') {
         response = await authService.registerCustomer({
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -148,7 +171,7 @@ const RegisterPage: React.FC = () => {
       // Store auth data in context (which also saves to localStorage)
       setUser(response);
 
-      // Redirect based on user type
+      // Redirect based on user type - Fixed: Use CUSTOMER instead of customer
       if (response.userType === UserType.CUSTOMER) {
         navigate('/customer/dashboard');
       } else if (response.userType === UserType.SERVICE_PROVIDER) {
@@ -169,182 +192,289 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1>Create Account</h1>
-        <p className="subtitle">Join our marketplace today</p>
+    <div className="container" style={{ maxWidth: '600px', marginTop: '2rem' }}>
+      <div className="card">
+        <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#2c3e50' }}>
+          Create Account
+        </h2>
 
-        {/* User Type Toggle */}
-        <div className="user-type-toggle">
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
           <button
-            className={userType === 'CUSTOMER' ? 'active' : ''}
-            onClick={() => setUserType('CUSTOMER')}
+            type="button"
+            className={`btn ${userType === 'customer' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ flex: 1 }}
+            onClick={() => setUserType('customer')}
           >
-            Customer
+            Register as Customer
           </button>
           <button
-            className={userType === 'PROVIDER' ? 'active' : ''}
-            onClick={() => setUserType('PROVIDER')}
+            type="button"
+            className={`btn ${userType === 'provider' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ flex: 1 }}
+            onClick={() => setUserType('provider')}
           >
-            Service Provider
+            Register as Provider
           </button>
         </div>
 
-        {apiError && <div className="error-banner">{apiError}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="firstName">First Name *</label>
-            <input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-            />
-            {errors.firstName && <span className="error-message">{errors.firstName}</span>}
+        {success && (
+          <div style={{
+            padding: '2rem',
+            backgroundColor: '#d4edda',
+            border: '1px solid #c3e6cb',
+            borderRadius: '4px',
+            textAlign: 'center',
+            marginBottom: '2rem'
+          }}>
+            <div style={{ fontSize: '3rem', color: '#28a745', marginBottom: '1rem' }}>✓</div>
+            <h3 style={{ color: '#155724', marginBottom: '1rem' }}>Registration Successful!</h3>
+            <p style={{ color: '#155724', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+              We've sent a verification email to <strong>{formData.email}</strong>
+            </p>
+            <div style={{
+              margin: '1.5rem 0',
+              padding: '1rem',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffeaa7',
+              borderRadius: '8px'
+            }}>
+              <p style={{ color: '#856404', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                📧 Important: Verify your email before logging in
+              </p>
+              <p style={{ color: '#856404', margin: '0', fontSize: '0.95rem' }}>
+                Please check your email inbox and click the verification link to activate your account.
+                After verification, you can return here to log in.
+              </p>
+            </div>
+            <div style={{
+              marginTop: '1.5rem',
+              padding: '1rem',
+              backgroundColor: '#e7f3ff',
+              borderRadius: '8px',
+              border: '1px solid #b3d9ff'
+            }}>
+              <p style={{ color: '#004085', margin: '0', fontSize: '0.9rem' }}>
+                💡 <strong>Tip:</strong> Check your spam folder if you don't see the email within a few minutes.
+              </p>
+            </div>
+            <p style={{ color: '#6c757d', fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+              Already verified your email?
+            </p>
+            <Link to="/login" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
+              Go to Login
+            </Link>
           </div>
+        )}
 
-          <div className="form-group">
-            <label htmlFor="lastName">Last Name *</label>
-            <input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-            />
-            {errors.lastName && <span className="error-message">{errors.lastName}</span>}
-          </div>
+        {apiError && <div className="error-message">{apiError}</div>}
 
+        {!success && <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email Address *</label>
+            <label>Email *</label>
             <input
               type="email"
-              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
+              required
             />
-            {errors.email && <span className="error-message">{errors.email}</span>}
+            {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password *</label>
+            <label>Password *</label>
             <input
               type="password"
-              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
+              required
+              minLength={6}
             />
-            {errors.password && <span className="error-message">{errors.password}</span>}
+            {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password *</label>
+            <label>Confirm Password *</label>
             <input
               type="password"
-              id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
+              required
             />
-            {errors.confirmPassword && (
-              <span className="error-message">{errors.confirmPassword}</span>
-            )}
+            {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
           </div>
 
           <div className="form-group">
-            <label htmlFor="phoneNumber">
-              Phone Number {userType === 'PROVIDER' && '*'}
-            </label>
+            <label>First Name *</label>
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              required
+            />
+            {errors.firstName && <span className="error-text">{errors.firstName}</span>}
+          </div>
+
+          <div className="form-group">
+            <label>Last Name *</label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              required
+            />
+            {errors.lastName && <span className="error-text">{errors.lastName}</span>}
+          </div>
+
+          <div className="form-group">
+            <label>Phone Number {userType === 'provider' && '*'}</label>
             <input
               type="tel"
-              id="phoneNumber"
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
+              required={userType === 'provider'}
             />
-            {errors.phoneNumber && <span className="error-message">{errors.phoneNumber}</span>}
+            {errors.phoneNumber && <span className="error-text">{errors.phoneNumber}</span>}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="address">
-              Address {userType === 'PROVIDER' && '*'}
-            </label>
-            <textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              rows={3}
-            />
-            {errors.address && <span className="error-message">{errors.address}</span>}
-          </div>
+          {userType === 'customer' && (
+            <div className="form-group">
+              <label>Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+          )}
 
-          {userType === 'PROVIDER' && (
+          {userType === 'provider' && (
             <>
               <div className="form-group">
-                <label htmlFor="categoryId">Service Category *</label>
+                <label>Address *</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  required
+                />
+                {errors.address && <span className="error-text">{errors.address}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Service Category *</label>
                 <select
-                  id="categoryId"
                   name="categoryId"
                   value={formData.categoryId}
                   onChange={handleChange}
+                  required
                 >
                   <option value="">Select a category</option>
-                  <option value="1">Plumbing</option>
-                  <option value="2">Electrical</option>
-                  <option value="3">Cleaning</option>
-                  <option value="4">Carpentry</option>
-                  <option value="5">Painting</option>
-                  {/* Add more categories as needed */}
+                  {categories.map((cat: any) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
-                {errors.categoryId && <span className="error-message">{errors.categoryId}</span>}
+                {errors.categoryId && <span className="error-text">{errors.categoryId}</span>}
               </div>
 
               <div className="form-group">
-                <label htmlFor="latitude">Latitude *</label>
+                <label>Business Name</label>
                 <input
                   type="text"
-                  id="latitude"
+                  name="businessName"
+                  value={formData.businessName}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Bio</label>
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleChange}
+                  placeholder="Tell customers about your experience and services..."
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Years of Experience</label>
+                <input
+                  type="number"
+                  name="yearsOfExperience"
+                  value={formData.yearsOfExperience}
+                  onChange={handleChange}
+                  min="0"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Latitude *</label>
+                <input
+                  type="text"
                   name="latitude"
                   value={formData.latitude}
                   onChange={handleChange}
-                  placeholder="e.g., 6.9271"
+                  required
+                  placeholder="e.g., 7.2083"
                 />
-                {errors.latitude && <span className="error-message">{errors.latitude}</span>}
+                {errors.latitude && <span className="error-text">{errors.latitude}</span>}
               </div>
 
               <div className="form-group">
-                <label htmlFor="longitude">Longitude *</label>
+                <label>Longitude *</label>
                 <input
                   type="text"
-                  id="longitude"
                   name="longitude"
                   value={formData.longitude}
                   onChange={handleChange}
-                  placeholder="e.g., 79.8612"
+                  required
+                  placeholder="e.g., 79.8458"
                 />
-                {errors.longitude && <span className="error-message">{errors.longitude}</span>}
+                {errors.longitude && <span className="error-text">{errors.longitude}</span>}
+              </div>
+
+              <div className="form-group">
+                <label>Service Radius (km)</label>
+                <input
+                  type="number"
+                  name="serviceRadiusKm"
+                  value={formData.serviceRadiusKm}
+                  onChange={handleChange}
+                  min="1"
+                  max="200"
+                />
               </div>
             </>
           )}
 
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%' }}
+            disabled={loading}
+          >
+            {loading ? 'Creating Account...' : 'Register'}
           </button>
-        </form>
+        </form>}
 
-        <div className="auth-footer">
-          <p>
+        {!success && <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <p style={{ color: '#7f8c8d' }}>
             Already have an account?{' '}
-            <Link to="/login" className="link">
-              Sign in
+            <Link to="/login" style={{ color: '#3498db', textDecoration: 'none' }}>
+              Login here
             </Link>
           </p>
-        </div>
+        </div>}
       </div>
     </div>
   );

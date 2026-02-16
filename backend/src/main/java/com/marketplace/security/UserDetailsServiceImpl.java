@@ -22,9 +22,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         // Check if email is verified
-        // Temporarily disabled for development/testing
-
-
+        if (!user.getIsEmailVerified()) {
+            throw new UsernameNotFoundException("Email not verified. Please check your email and verify your account before logging in.");
+        }
         return UserDetailsImpl.build(user);
     }
 

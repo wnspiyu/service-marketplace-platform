@@ -6,15 +6,12 @@ import { UserType } from './types/user';
 import { AuthProvider } from './context/AuthContext';
 import 'leaflet/dist/leaflet.css';
 
-// Pages
+//Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-// import VerifyEmailPage from './pages/VerifyEmailPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import CustomerDashboard from './pages/customer/Dashboard';
-// import CreateTaskPage from './pages/customer/CreateTask';
-// import TaskDetailsPage from './pages/customer/TaskDetails';
 import ProviderDashboard from './pages/provider/Dashboard';
-// import NotificationsPage from './pages/provider/Notifications';
 
 function App() {
   return (
@@ -24,7 +21,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-
+            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
             {/* Customer Routes */}
             <Route

@@ -25,5 +25,59 @@ public class EmailService {
     @Value("${app.base-url}")
     private String appBaseUrl;
 
-    
+    @Async
+    public void sendVerificationEmail(User user, String token) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("Verify Your Email Address");
+            message.setText(String.format(
+                    "Dear %s,\n\n" +
+                            "Thank you for registering with %s!\n\n" +
+                            "Please click the link below to verify your email address:\n" +
+                            "%s/verify-email/%s\n\n" +
+                            "This link will expire in 24 hours.\n\n" +
+                            "Best regards,\n%s Team",
+                    user.getFirstName(),
+                    appName,
+                    appBaseUrl,
+                    token,
+                    appName
+            ));
+
+            mailSender.send(message);
+            logger.info("Verification email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            logger.error("Failed to send verification email to: {}", user.getEmail(), e);
+        }
+    }
+
+    @Async
+    public void sendPasswordResetEmail(User user, String token) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            message.setSubject("Password Reset Request");
+            message.setText(String.format(
+                    "Dear %s,\n\n" +
+                            "You have requested to reset your password.\n\n" +
+                            "Please click the link below to reset your password:\n" +
+                            "%s/reset-password?token=%s\n\n" +
+                            "This link will expire in 1 hour.\n\n" +
+                            "If you did not request this, please ignore this email.\n\n" +
+                            "Best regards,\n%s Team",
+                    user.getFirstName(),
+                    appBaseUrl,
+                    token,
+                    appName
+            ));
+
+            mailSender.send(message);
+            logger.info("Password reset email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            logger.error("Failed to send password reset email to: {}", user.getEmail(), e);
+        }
+    }
+
+
 }

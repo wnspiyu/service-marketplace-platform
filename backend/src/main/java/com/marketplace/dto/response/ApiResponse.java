@@ -15,7 +15,7 @@ public class ApiResponse {
         return new ApiResponse(true, message);
     }
 
-    public static ApiResponse error(String message) {
-        return new ApiResponse(false, message);
-    }
+//    public static ApiResponse error(String message) {
+//        return new ApiResponse(false, message);
+//    }
 }

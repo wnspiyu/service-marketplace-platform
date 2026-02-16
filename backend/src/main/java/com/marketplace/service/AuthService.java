@@ -30,6 +30,8 @@ public class AuthService {
     private final CustomerProfileRepository customerProfileRepository;
     private final ServiceProviderProfileRepository providerProfileRepository;
     private final ServiceCategoryRepository categoryRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
@@ -60,6 +62,17 @@ public class AuthService {
         customerProfile.setUser(user);
         customerProfile.setAddress(request.getAddress());
         customerProfileRepository.save(customerProfile);
+
+        // Generate email verification token
+        String verificationToken = UUID.randomUUID().toString();
+        EmailVerificationToken emailToken = new EmailVerificationToken();
+        emailToken.setUser(user);
+        emailToken.setToken(verificationToken);
+        emailToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        emailVerificationTokenRepository.save(emailToken);
+
+        // Send verification email
+        emailService.sendVerificationEmail(user, verificationToken);
 
         // Generate JWT token
         String jwtToken = tokenProvider.generateTokenFromUserId(user.getId());
@@ -110,6 +123,19 @@ public class AuthService {
         providerProfile.setAddress(request.getAddress());
         providerProfile.setServiceRadiusKm(request.getServiceRadiusKm() != null ? request.getServiceRadiusKm() : 50);
         providerProfileRepository.save(providerProfile);
+
+
+        // Generate email verification token
+        String verificationToken = UUID.randomUUID().toString();
+        EmailVerificationToken emailToken = new EmailVerificationToken();
+        emailToken.setUser(user);
+        emailToken.setToken(verificationToken);
+        emailToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        emailVerificationTokenRepository.save(emailToken);
+
+        // Send verification email
+        emailService.sendVerificationEmail(user, verificationToken);
+
         // Generate JWT token
         String jwtToken = tokenProvider.generateTokenFromUserId(user.getId());
 
@@ -141,5 +167,65 @@ public class AuthService {
                 null, // lastName not in UserDetails
                 userDetails.getUserType()
         );
+    }
+
+    @Transactional
+    public void verifyEmail(String token) {
+        EmailVerificationToken verificationToken = emailVerificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new BadRequestException("Invalid verification token"));
+
+        if (verificationToken.getVerified()) {
+            throw new BadRequestException("Email has already been verified");
+        }
+
+        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Verification token has expired");
+        }
+
+        User user = verificationToken.getUser();
+        user.setIsEmailVerified(true);
+        userRepository.save(user);
+
+        verificationToken.setVerified(true);
+        emailVerificationTokenRepository.save(verificationToken);
+    }
+
+    @Transactional
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+
+        // Generate reset token
+        String resetToken = UUID.randomUUID().toString();
+        PasswordResetToken passwordResetToken = new PasswordResetToken();
+        passwordResetToken.setUser(user);
+        passwordResetToken.setToken(resetToken);
+        passwordResetToken.setExpiresAt(LocalDateTime.now().plusHours(1));
+        passwordResetToken.setUsed(false);
+        passwordResetTokenRepository.save(passwordResetToken);
+
+        // Send reset email
+        emailService.sendPasswordResetEmail(user, resetToken);
+    }
+
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new BadRequestException("Invalid reset token"));
+
+        if (resetToken.getUsed()) {
+            throw new BadRequestException("Reset token has already been used");
+        }
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Reset token has expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
     }
 }
