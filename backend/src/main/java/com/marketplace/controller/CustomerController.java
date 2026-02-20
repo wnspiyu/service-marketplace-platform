@@ -4,6 +4,7 @@ import com.marketplace.dto.request.CreateTaskRequest;
 import com.marketplace.dto.response.*;
 import com.marketplace.entity.TaskStatus;
 import com.marketplace.security.UserDetailsImpl;
+import com.marketplace.service.QuotationService;
 import com.marketplace.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.List;
 public class CustomerController {
 
     private final TaskService taskService;
+    private final QuotationService quotationService;
 
     // Task Management
 
@@ -52,5 +54,29 @@ public class CustomerController {
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         taskService.updateTaskStatus(taskId, userDetails.getId(), status);
         return ResponseEntity.ok(ApiResponse.success("Task status updated successfully"));
+    }
+    // Quotation Management
+
+    @GetMapping("/tasks/{taskId}/quotations")
+    public ResponseEntity<List<QuotationResponse>> getTaskQuotations(
+            @PathVariable Long taskId) {
+        List<QuotationResponse> quotations = quotationService.getQuotationsByTask(taskId);
+        return ResponseEntity.ok(quotations);
+    }
+
+    @PutMapping("/quotations/{quotationId}/accept")
+    public ResponseEntity<ApiResponse> acceptQuotation(
+            @PathVariable Long quotationId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        quotationService.acceptQuotation(quotationId, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.success("Quotation accepted successfully"));
+    }
+
+    @PutMapping("/quotations/{quotationId}/reject")
+    public ResponseEntity<ApiResponse> rejectQuotation(
+            @PathVariable Long quotationId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        quotationService.rejectQuotation(quotationId, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.success("Quotation rejected"));
     }
 }

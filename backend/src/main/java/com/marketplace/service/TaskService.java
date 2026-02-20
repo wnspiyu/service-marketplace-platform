@@ -20,9 +20,11 @@ public class TaskService {
     private final UserRepository userRepository;
     private final ServiceCategoryRepository categoryRepository;
     private final TaskNotificationRepository notificationRepository;
+    private final LocationService locationService;
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request, Long customerId) {
+        // Verify user exists and is a customer
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
@@ -30,9 +32,11 @@ public class TaskService {
             throw new UnauthorizedException("Only customers can create tasks");
         }
 
+        // Verify category exists
         ServiceCategory category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Service category not found"));
 
+        // Create task
         Task task = new Task();
         task.setCustomer(customer);
         task.setCategory(category);
@@ -48,6 +52,14 @@ public class TaskService {
         task.setStatus(TaskStatus.OPEN);
 
         task = taskRepository.save(task);
+
+        // Find service providers within radius
+        List<ServiceProviderProfile> providers = locationService.findProvidersWithinRadius(
+                request.getLatitude(),
+                request.getLongitude(),
+                request.getSearchRadiusKm(),
+                request.getCategoryId()
+        );
 
         return mapToTaskResponse(task);
     }
