@@ -10,6 +10,4 @@ import java.util.List;
 public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory, Long> {
 
     List<ServiceCategory> findByIsActiveTrue();
-
-    boolean existsByName(String name);
 }

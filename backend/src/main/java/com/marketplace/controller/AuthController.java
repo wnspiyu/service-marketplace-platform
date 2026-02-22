@@ -1,10 +1,10 @@
 package com.marketplace.controller;
 
 
+import com.marketplace.dto.request.ForgotPasswordRequest;
 import com.marketplace.dto.request.LoginRequest;
 import com.marketplace.dto.request.RegisterCustomerRequest;
 import com.marketplace.dto.request.RegisterProviderRequest;
-import com.marketplace.dto.request.ForgotPasswordRequest;
 import com.marketplace.dto.request.ResetPasswordRequest;
 import com.marketplace.dto.response.ApiResponse;
 import com.marketplace.dto.response.LoginResponse;

@@ -124,7 +124,6 @@ public class AuthService {
         providerProfile.setServiceRadiusKm(request.getServiceRadiusKm() != null ? request.getServiceRadiusKm() : 50);
         providerProfileRepository.save(providerProfile);
 
-
         // Generate email verification token
         String verificationToken = UUID.randomUUID().toString();
         EmailVerificationToken emailToken = new EmailVerificationToken();

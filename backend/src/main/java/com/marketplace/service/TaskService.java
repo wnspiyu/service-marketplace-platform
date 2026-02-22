@@ -1,14 +1,17 @@
 package com.marketplace.service;
 
 import com.marketplace.dto.request.CreateTaskRequest;
+import com.marketplace.dto.response.ServiceProviderResponse;
 import com.marketplace.dto.response.TaskResponse;
 import com.marketplace.entity.*;
+import com.marketplace.exception.BadRequestException;
 import com.marketplace.exception.ResourceNotFoundException;
 import com.marketplace.exception.UnauthorizedException;
 import com.marketplace.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +23,10 @@ public class TaskService {
     private final UserRepository userRepository;
     private final ServiceCategoryRepository categoryRepository;
     private final TaskNotificationRepository notificationRepository;
+    private final QuotationRepository quotationRepository;
+    private final ReviewRepository reviewRepository;
     private final LocationService locationService;
+    private final EmailService emailService;
 
     @Transactional
     public TaskResponse createTask(CreateTaskRequest request, Long customerId) {
@@ -61,6 +67,19 @@ public class TaskService {
                 request.getCategoryId()
         );
 
+        // Create notifications for each provider and send emails
+        for (ServiceProviderProfile provider : providers) {
+            TaskNotification notification = new TaskNotification();
+            notification.setTask(task);
+            notification.setServiceProvider(provider.getUser());
+            notification.setIsViewed(false);
+            notification.setIsDeclined(false);
+            notificationRepository.save(notification);
+
+            // Send email notification
+            emailService.sendTaskNotificationEmail(provider.getUser(), task);
+        }
+
         return mapToTaskResponse(task);
     }
 
@@ -74,6 +93,7 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
+        // Verify user has access to this task (either customer or notified provider)
         if (!task.getCustomer().getId().equals(userId)) {
             boolean isNotifiedProvider = notificationRepository.existsByTaskIdAndServiceProviderId(taskId, userId);
             if (!isNotifiedProvider) {
@@ -97,6 +117,77 @@ public class TaskService {
         taskRepository.save(task);
     }
 
+    @Transactional
+    public void deleteTask(Long taskId, Long customerId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        // Verify the customer owns this task
+        if (!task.getCustomer().getId().equals(customerId)) {
+            throw new UnauthorizedException("You can only delete your own tasks");
+        }
+
+        // Check if task has an accepted quotation
+        if (task.getStatus() == TaskStatus.IN_PROGRESS) {
+            throw new BadRequestException("Cannot delete a task that is in progress. Please complete or cancel the task first.");
+        }
+
+        // Delete associated reviews (if any)
+        reviewRepository.deleteByTaskId(taskId);
+
+        // Delete associated notifications
+        notificationRepository.deleteByTaskId(taskId);
+
+        // Delete associated quotations
+        quotationRepository.deleteByTaskId(taskId);
+
+        // Delete the task
+        taskRepository.delete(task);
+    }
+
+    public List<ServiceProviderResponse> getNotifiedProviders(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        List<TaskNotification> notifications = notificationRepository.findByTaskId(taskId);
+
+        return notifications.stream()
+                .map(notification -> {
+                    User provider = notification.getServiceProvider();
+                    ServiceProviderProfile profile = provider.getServiceProviderProfile();
+
+                    ServiceProviderResponse response = new ServiceProviderResponse();
+                    response.setId(profile.getId());
+                    response.setUserId(provider.getId());
+                    response.setFirstName(provider.getFirstName());
+                    response.setLastName(provider.getLastName());
+                    response.setEmail(provider.getEmail());
+                    response.setPhoneNumber(provider.getPhoneNumber());
+                    response.setCategoryId(profile.getCategory().getId());
+                    response.setCategoryName(profile.getCategory().getName());
+                    response.setBusinessName(profile.getBusinessName());
+                    response.setBio(profile.getBio());
+                    response.setYearsOfExperience(profile.getYearsOfExperience());
+                    response.setLatitude(profile.getLatitude());
+                    response.setLongitude(profile.getLongitude());
+                    response.setAddress(profile.getAddress());
+                    response.setServiceRadiusKm(profile.getServiceRadiusKm());
+                    response.setAverageRating(profile.getAverageRating());
+                    response.setTotalReviews(profile.getTotalReviews());
+                    response.setTotalTasksCompleted(profile.getTotalTasksCompleted());
+
+                    // Calculate distance
+                    double distance = locationService.calculateDistance(
+                            task.getLatitude(), task.getLongitude(),
+                            profile.getLatitude(), profile.getLongitude()
+                    );
+                    response.setDistanceKm(distance);
+
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
+
     private TaskResponse mapToTaskResponse(Task task) {
         TaskResponse response = new TaskResponse();
         response.setId(task.getId());
@@ -118,6 +209,10 @@ public class TaskService {
         response.setSelectedQuotationId(task.getSelectedQuotationId());
         response.setCreatedAt(task.getCreatedAt());
         response.setUpdatedAt(task.getUpdatedAt());
+
+        // Get quotation count
+        int quotationCount = quotationRepository.findByTaskId(task.getId()).size();
+        response.setQuotationCount(quotationCount);
 
         return response;
     }

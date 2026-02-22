@@ -46,10 +46,10 @@ public class QuotationService {
             throw new BadRequestException("Task is no longer accepting quotations");
         }
 
-//        // Verify provider was notified about this task
-//        TaskNotification notification = notificationRepository.findByTaskIdAndServiceProviderId(
-//                request.getTaskId(), providerId
-//        ).orElseThrow(() -> new BadRequestException("You were not notified about this task"));
+        // Verify provider was notified about this task
+        TaskNotification notification = notificationRepository.findByTaskIdAndServiceProviderId(
+                request.getTaskId(), providerId
+        ).orElseThrow(() -> new BadRequestException("You were not notified about this task"));
 
         // Check if quotation already exists
         if (quotationRepository.existsByTaskIdAndServiceProviderId(request.getTaskId(), providerId)) {
@@ -67,13 +67,13 @@ public class QuotationService {
 
         quotation = quotationRepository.save(quotation);
 
-//        // Mark notification as viewed
-//        notification.setIsViewed(true);
-//        notification.setViewedAt(LocalDateTime.now());
-//        notificationRepository.save(notification);
-//
-//        // Send email to customer
-//        emailService.sendQuotationSubmittedEmail(task.getCustomer(), quotation);
+        // Mark notification as viewed
+        notification.setIsViewed(true);
+        notification.setViewedAt(LocalDateTime.now());
+        notificationRepository.save(notification);
+
+        // Send email to customer
+        emailService.sendQuotationSubmittedEmail(task.getCustomer(), quotation);
 
         return mapToQuotationResponse(quotation);
     }
@@ -126,12 +126,12 @@ public class QuotationService {
                 quotationRepository.save(other);
 
                 // Send declination email to rejected provider
-//                emailService.sendQuotationDeclinedEmail(other.getServiceProvider(), other);
+                emailService.sendQuotationDeclinedEmail(other.getServiceProvider(), other);
             }
         }
 
         // Send acceptance email to selected provider
-//        emailService.sendQuotationAcceptedEmail(quotation.getServiceProvider(), quotation);
+        emailService.sendQuotationAcceptedEmail(quotation.getServiceProvider(), quotation);
     }
 
     @Transactional

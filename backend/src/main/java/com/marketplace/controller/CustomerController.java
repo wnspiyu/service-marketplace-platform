@@ -1,17 +1,18 @@
 package com.marketplace.controller;
 
+import com.marketplace.dto.request.CreateReviewRequest;
 import com.marketplace.dto.request.CreateTaskRequest;
 import com.marketplace.dto.response.*;
 import com.marketplace.entity.TaskStatus;
 import com.marketplace.security.UserDetailsImpl;
 import com.marketplace.service.QuotationService;
+import com.marketplace.service.ReviewService;
 import com.marketplace.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -21,6 +22,7 @@ public class CustomerController {
 
     private final TaskService taskService;
     private final QuotationService quotationService;
+    private final ReviewService reviewService;
 
     // Task Management
 
@@ -78,5 +80,21 @@ public class CustomerController {
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         quotationService.rejectQuotation(quotationId, userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Quotation rejected"));
+    }
+
+    // Review Management
+
+    @PostMapping("/reviews")
+    public ResponseEntity<ReviewResponse> createReview(
+            @Valid @RequestBody CreateReviewRequest request,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        ReviewResponse review = reviewService.createReview(request, userDetails.getId());
+        return ResponseEntity.ok(review);
+    }
+
+    @GetMapping("/reviews/task/{taskId}")
+    public ResponseEntity<ReviewResponse> getTaskReview(@PathVariable Long taskId) {
+        ReviewResponse review = reviewService.getReviewByTask(taskId);
+        return ResponseEntity.ok(review);
     }
 }

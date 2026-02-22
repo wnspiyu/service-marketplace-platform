@@ -12,12 +12,5 @@ import java.util.Optional;
 @Repository
 public interface ServiceProviderProfileRepository extends JpaRepository<ServiceProviderProfile, Long> {
 
-    Optional<ServiceProviderProfile> findByUserId(Long userId);
-
-    boolean existsByUserId(Long userId);
-
     List<ServiceProviderProfile> findByCategoryId(Long categoryId);
-
-    @Query("SELECT sp FROM ServiceProviderProfile sp WHERE sp.category.id = :categoryId")
-    List<ServiceProviderProfile> findAllByCategoryId(@Param("categoryId") Long categoryId);
 }
