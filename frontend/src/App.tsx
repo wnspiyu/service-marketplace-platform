@@ -12,6 +12,7 @@ import RegisterPage from './pages/RegisterPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import CustomerDashboard from './pages/customer/Dashboard';
 import ProviderDashboard from './pages/provider/Dashboard';
+import CreateTaskPage from './pages/customer/CreateTask';
 
 function App() {
   return (
@@ -36,15 +37,7 @@ function App() {
               path="/customer/create-task"
               element={
                 <ProtectedRoute requiredRole={UserType.CUSTOMER}>
-
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/customer/tasks/:taskId"
-              element={
-                <ProtectedRoute requiredRole={UserType.CUSTOMER}>
-
+                  <CreateTaskPage />
                 </ProtectedRoute>
               }
             />
@@ -55,14 +48,6 @@ function App() {
               element={
                 <ProtectedRoute requiredRole={UserType.SERVICE_PROVIDER}>
                   <ProviderDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/provider/notifications"
-              element={
-                <ProtectedRoute requiredRole={UserType.SERVICE_PROVIDER}>
-
                 </ProtectedRoute>
               }
             />
