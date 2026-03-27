@@ -1,5 +1,6 @@
 import api from './api';
 import {ServiceCategory, CreateTaskRequest, Task } from '../types/task';
+import { TaskStatus } from '../types/task';
 
 export const taskService = {
   getAllCategories: async (): Promise<ServiceCategory[]> => {
@@ -25,5 +26,15 @@ export const taskService = {
   getTaskById: async (taskId: number): Promise<Task> => {
     const response = await api.get(`/customer/tasks/${taskId}`);
     return response.data;
+  },
+
+  updateTaskStatus: async (taskId: number, status: TaskStatus): Promise<void> => {
+    await api.put(`/customer/tasks/${taskId}/status`, null, {
+      params: { status },
+    });
+  },
+
+  deleteTask: async (taskId: number): Promise<void> => {
+    await api.delete(`/customer/tasks/${taskId}`);
   },
 };

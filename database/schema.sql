@@ -3,16 +3,7 @@
 
 SET search_path TO marketplace;
 
--- ============================================
--- ENUM VALUES (Using VARCHAR for Hibernate compatibility)
--- ============================================
--- User Types: 'CUSTOMER', 'SERVICE_PROVIDER'
--- Task Status: 'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
--- Quotation Status: 'PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN'
-
--- ============================================
--- TABLES
--- ============================================
+--TABLES
 
 -- Users Table (Both Customers and Service Providers)
 CREATE TABLE IF NOT EXISTS marketplace.users (
@@ -28,26 +19,6 @@ CREATE TABLE IF NOT EXISTS marketplace.users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT check_user_type CHECK (user_type IN ('CUSTOMER', 'SERVICE_PROVIDER'))
-);
-
--- Password Reset Tokens
-CREATE TABLE IF NOT EXISTS marketplace.password_reset_tokens (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES marketplace.users(id) ON DELETE CASCADE,
-    token VARCHAR(255) UNIQUE NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    used BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Email Verification Tokens
-CREATE TABLE IF NOT EXISTS marketplace.email_verification_tokens (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES marketplace.users(id) ON DELETE CASCADE,
-    token VARCHAR(255) UNIQUE NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    verified BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Service Categories
@@ -90,6 +61,27 @@ CREATE TABLE IF NOT EXISTS marketplace.customer_profiles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+-- Password Reset Tokens
+CREATE TABLE IF NOT EXISTS marketplace.password_reset_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES marketplace.users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Email Verification Tokens
+CREATE TABLE IF NOT EXISTS marketplace.email_verification_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES marketplace.users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 
 -- Tasks
 CREATE TABLE IF NOT EXISTS marketplace.tasks (
@@ -156,9 +148,8 @@ CREATE TABLE IF NOT EXISTS marketplace.reviews (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
+
 -- INDEXES FOR PERFORMANCE
--- ============================================
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON marketplace.users(email);
 CREATE INDEX IF NOT EXISTS idx_users_user_type ON marketplace.users(user_type);
@@ -196,9 +187,8 @@ CREATE INDEX IF NOT EXISTS idx_quotations_status ON marketplace.quotations(statu
 CREATE INDEX IF NOT EXISTS idx_reviews_provider ON marketplace.reviews(service_provider_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_customer ON marketplace.reviews(customer_id);
 
--- ============================================
--- TRIGGERS
--- ============================================
+
+-- FUNCTIONS and TRIGGERS
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION marketplace.update_updated_at_column()
@@ -251,10 +241,6 @@ CREATE TRIGGER update_service_categories_updated_at
     BEFORE UPDATE ON marketplace.service_categories
     FOR EACH ROW
     EXECUTE FUNCTION marketplace.update_updated_at_column();
-
--- ============================================
--- FUNCTIONS
--- ============================================
 
 -- Function to update provider average rating after review insert/update
 CREATE OR REPLACE FUNCTION marketplace.update_provider_rating()
