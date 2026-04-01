@@ -1,6 +1,7 @@
 import api from './api';
 import {ServiceCategory, CreateTaskRequest, Task } from '../types/task';
 import { TaskStatus } from '../types/task';
+import { ServiceProvider } from '../types/quotation';
 
 export const taskService = {
   getAllCategories: async (): Promise<ServiceCategory[]> => {
@@ -36,5 +37,10 @@ export const taskService = {
 
   deleteTask: async (taskId: number): Promise<void> => {
     await api.delete(`/customer/tasks/${taskId}`);
+  },
+
+  getNotifiedProviders: async (taskId: number): Promise<ServiceProvider[]> => {
+    const response = await api.get(`/customer/tasks/${taskId}/providers`);
+    return response.data;
   },
 };

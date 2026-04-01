@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskService } from '../../services/taskService';
 import { Task, TaskStatus } from '../../types/task';
+import { quotationService } from '../../services/quotationService';
 import { Quotation, ServiceProvider } from '../../types/quotation';
 import TaskMap from '../../components/TaskMap';
 
@@ -25,10 +26,12 @@ const TaskDetailsPage: React.FC = () => {
 
   const loadTaskDetails = async () => {
     try {
-      const [taskData] = await Promise.all([
+      const [taskData, quotationsData] = await Promise.all([
         taskService.getTaskById(Number(taskId!)),
+        quotationService.getTaskQuotations(Number(taskId!)),
       ]);
       setTask(taskData);
+      setQuotations(quotationsData);
     } catch (err) {
       console.error('Failed to load task details', err);
     } finally {
@@ -238,7 +241,7 @@ const TaskDetailsPage: React.FC = () => {
               <p><strong>Price:</strong> ${quotation.price}</p>
               {quotation.estimatedDuration && <p><strong>Duration:</strong> {quotation.estimatedDuration}</p>}
               {quotation.message && <p><strong>Message:</strong> {quotation.message}</p>}
-              <p><strong>Rating:</strong> ⭐ {quotation.providerRating} ({quotation.providerTotalReviews} reviews)</p>
+              {/* <p><strong>Rating:</strong> ⭐ {quotation.providerRating} ({quotation.providerTotalReviews} reviews)</p> */}
               <p><strong>Status:</strong> <span className={`badge badge-${quotation.status.toLowerCase()}`}>{quotation.status}</span></p>
 
               {quotation.status === 'PENDING' && (
