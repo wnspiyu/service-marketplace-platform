@@ -45,3 +45,10 @@ export interface ServiceProvider {
   totalTasksCompleted: number;
   distanceKm?: number;
 }
+
+export interface CreateQuotationRequest {
+  taskId: number;
+  price: number;
+  estimatedDuration?: string;
+  message?: string;
+}

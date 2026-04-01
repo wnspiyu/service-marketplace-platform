@@ -34,8 +34,8 @@ const MapClickHandler: React.FC<{
 };
 
 const LocationPicker: React.FC<LocationPickerProps> = ({
-  initialLatitude = 40.7128,
-  initialLongitude = -74.006,
+  initialLatitude = 0,
+  initialLongitude = 0,
   initialAddress = '',
   radiusKm = 0,
   onLocationChange,

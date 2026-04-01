@@ -4,36 +4,31 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import { taskService } from '../services/taskService';
 import { ServiceCategory } from '../types/task';
-import { UserType } from '../types/user';
+import LocationPicker from '../components/LocationPicker';
 
-/**
- * Registration page component
- */
 const RegisterPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { setUser } = useAuth();
   const [userType, setUserType] = useState<'customer' | 'provider'>('customer');
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
+    firstName: '',
+    lastName: '',
     phoneNumber: '',
     address: '',
+    // Provider specific
     categoryId: '',
-    latitude: '',
-    longitude: '',
     businessName: '',
     bio: '',
-    yearsOfExperience: '',
-    serviceRadiusKm: '',
+    yearsOfExperience: 0,
+    latitude: 0,
+    longitude: 0,
+    serviceRadiusKm: 0,
   });
-  const [errors, setErrors] = useState<any>({});
-  const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState('');
-  const [success, setSuccess] = useState(false);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (userType === 'provider') {
@@ -50,142 +45,63 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  /**
-   * Handle input change
-   */
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleLocationChange = (latitude: number, longitude: number, address: string) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      latitude,
+      longitude,
+      address,
     });
-    // Clear error for this field
-    setErrors({
-      ...errors,
-      [e.target.name]: '',
-    });
-    setApiError('');
   };
 
-  /**
-   * Validate form
-   */
-  const validateForm = (): boolean => {
-    const newErrors: any = {};
-
-    if (!formData.firstName) {
-      newErrors.firstName = 'First name is required';
-    } else if (formData.firstName.length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
-    }
-
-    if (!formData.lastName) {
-      newErrors.lastName = 'Last name is required';
-    } else if (formData.lastName.length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters';
-    }
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    } else if (!/(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])/.test(formData.password)) {
-      newErrors.password = 'Password must contain uppercase, lowercase, number, and special character';
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    if (userType === 'provider') {
-      if (!formData.phoneNumber) {
-        newErrors.phoneNumber = 'Phone number is required for providers';
-      } else if (!/^[0-9]{10,15}$/.test(formData.phoneNumber)) {
-        newErrors.phoneNumber = 'Phone number must be 10-15 digits';
-      }
-
-      if (!formData.address) {
-        newErrors.address = 'Address is required for providers';
-      }
-
-      if (!formData.categoryId) {
-        newErrors.categoryId = 'Service category is required for providers';
-      }
-
-      if (!formData.latitude) {
-        newErrors.latitude = 'Latitude is required for providers';
-      }
-
-      if (!formData.longitude) {
-        newErrors.longitude = 'Longitude is required for providers';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  /**
-   * Handle form submit
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
-    if (!validateForm()) {
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
 
     setLoading(true);
-    setApiError('');
 
     try {
       let response;
       if (userType === 'customer') {
         response = await authService.registerCustomer({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
-          phoneNumber: formData.phoneNumber || undefined,
-          address: formData.address || undefined,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phoneNumber: formData.phoneNumber,
+          address: formData.address,
         });
       } else {
         response = await authService.registerProvider({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           phoneNumber: formData.phoneNumber,
+          categoryId: Number(formData.categoryId),
+          businessName: formData.businessName,
+          bio: formData.bio,
+          yearsOfExperience: Number(formData.yearsOfExperience),
+          latitude: Number(formData.latitude),
+          longitude: Number(formData.longitude),
           address: formData.address,
-          categoryId: parseInt(formData.categoryId),
-          latitude: parseFloat(formData.latitude),
-          longitude: parseFloat(formData.longitude),
+          serviceRadiusKm: Number(formData.serviceRadiusKm),
         });
       }
 
-      // Store auth data in context (which also saves to localStorage)
-      setUser(response);
-
-      // Redirect based on user type - Fixed: Use CUSTOMER instead of customer
-      if (response.userType === UserType.CUSTOMER) {
-        navigate('/customer/dashboard');
-      } else if (response.userType === UserType.SERVICE_PROVIDER) {
-        navigate('/provider/dashboard');
-      }
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      if (error.response?.data?.message) {
-        setApiError(error.response.data.message);
-      } else if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
-      } else {
-        setApiError('Registration failed. Please try again.');
-      }
+      // Don't auto-login - user needs to verify email first
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -266,7 +182,7 @@ const RegisterPage: React.FC = () => {
           </div>
         )}
 
-        {apiError && <div className="error-message">{apiError}</div>}
+        {error && <div className="error-message">{error}</div>}
 
         {!success && <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -278,7 +194,6 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
               required
             />
-            {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
 
           <div className="form-group">
@@ -291,7 +206,6 @@ const RegisterPage: React.FC = () => {
               required
               minLength={6}
             />
-            {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
 
           <div className="form-group">
@@ -303,7 +217,6 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
               required
             />
-            {errors.confirmPassword && <span className="error-text">{errors.confirmPassword}</span>}
           </div>
 
           <div className="form-group">
@@ -315,7 +228,6 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
               required
             />
-            {errors.firstName && <span className="error-text">{errors.firstName}</span>}
           </div>
 
           <div className="form-group">
@@ -327,19 +239,16 @@ const RegisterPage: React.FC = () => {
               onChange={handleChange}
               required
             />
-            {errors.lastName && <span className="error-text">{errors.lastName}</span>}
           </div>
 
           <div className="form-group">
-            <label>Phone Number {userType === 'provider' && '*'}</label>
+            <label>Phone Number</label>
             <input
               type="tel"
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              required={userType === 'provider'}
             />
-            {errors.phoneNumber && <span className="error-text">{errors.phoneNumber}</span>}
           </div>
 
           {userType === 'customer' && (
@@ -357,18 +266,6 @@ const RegisterPage: React.FC = () => {
           {userType === 'provider' && (
             <>
               <div className="form-group">
-                <label>Address *</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                />
-                {errors.address && <span className="error-text">{errors.address}</span>}
-              </div>
-
-              <div className="form-group">
                 <label>Service Category *</label>
                 <select
                   name="categoryId"
@@ -377,13 +274,12 @@ const RegisterPage: React.FC = () => {
                   required
                 >
                   <option value="">Select a category</option>
-                  {categories.map((cat: any) => (
+                  {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
                   ))}
                 </select>
-                {errors.categoryId && <span className="error-text">{errors.categoryId}</span>}
               </div>
 
               <div className="form-group">
@@ -418,29 +314,14 @@ const RegisterPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label>Latitude *</label>
-                <input
-                  type="text"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., 7.2083"
+                <label>Service Location *</label>
+                <LocationPicker
+                  initialLatitude={formData.latitude}
+                  initialLongitude={formData.longitude}
+                  initialAddress={formData.address}
+                  radiusKm={formData.serviceRadiusKm}
+                  onLocationChange={handleLocationChange}
                 />
-                {errors.latitude && <span className="error-text">{errors.latitude}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Longitude *</label>
-                <input
-                  type="text"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., 79.8458"
-                />
-                {errors.longitude && <span className="error-text">{errors.longitude}</span>}
               </div>
 
               <div className="form-group">

@@ -11,13 +11,7 @@ const TaskDetailsPage: React.FC = () => {
   const [task, setTask] = useState<Task | null>(null);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [providers, setProviders] = useState<ServiceProvider[]>([]);
-  // const [review, setReview] = useState<Review | null>(null);
-  const [showReviewForm, setShowReviewForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [reviewForm, setReviewForm] = useState({
-    rating: 5,
-    comment: '',
-  });
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState('');
@@ -261,8 +255,6 @@ const TaskDetailsPage: React.FC = () => {
           ))
         )}
       </div>
-
-      }
     </div>
   );
 };

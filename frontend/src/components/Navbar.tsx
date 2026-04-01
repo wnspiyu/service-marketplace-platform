@@ -19,7 +19,16 @@ const Navbar: React.FC = () => {
         </Link>
 
         <div style={styles.links}>
-          {isAuthenticated && (
+          {!isAuthenticated ? (
+            <>
+              <Link to="/login" style={styles.link}>
+                Login
+              </Link>
+              <Link to="/register" style={styles.link}>
+                Register
+              </Link>
+            </>
+          ) : (
             <>
               {isCustomer && (
                 <>

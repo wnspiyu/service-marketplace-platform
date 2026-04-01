@@ -10,10 +10,10 @@ const CreateTaskPage: React.FC = () => {
     title: '',
     description: '',
     categoryId: '',
-    latitude: 40.7128,
-    longitude: -74.0060,
+    latitude: 0,
+    longitude: 0,
     address: '',
-    searchRadiusKm: 20,
+    searchRadiusKm: 0,
     budgetMin: '',
     budgetMax: '',
     preferredDate: '',
@@ -149,7 +149,7 @@ const CreateTaskPage: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label>Budget Min (USD)</label>
+            <label>Budget Min (LKR)</label>
             <input
               type="number"
               name="budgetMin"
@@ -161,7 +161,7 @@ const CreateTaskPage: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label>Budget Max (USD)</label>
+            <label>Budget Max (LKR)</label>
             <input
               type="number"
               name="budgetMax"

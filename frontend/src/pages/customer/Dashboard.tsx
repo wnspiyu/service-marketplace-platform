@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { taskService } from '../../services/taskService';
-import { Task , TaskStatus } from '../../types/task';
+import { Task, TaskStatus } from '../../types/task';
 
 const CustomerDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -29,6 +29,23 @@ const CustomerDashboard: React.FC = () => {
   const handleDeleteTask = async (taskId: number) => {
     setDeletingTaskId(taskId);
     setError('');
+
+    try {
+      await taskService.deleteTask(taskId);
+      setMessage('Task deleted successfully!');
+      setDeleteConfirmId(null);
+      // Reload tasks
+      loadTasks();
+      // Clear success message after 3 seconds
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete task. Please try again.');
+      setDeleteConfirmId(null);
+      // Clear error message after 5 seconds
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setDeletingTaskId(null);
+    }
   };
 
   if (loading) {
