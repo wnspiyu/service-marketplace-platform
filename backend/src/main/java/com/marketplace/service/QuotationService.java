@@ -151,6 +151,9 @@ public class QuotationService {
 
         quotation.setStatus(QuotationStatus.REJECTED);
         quotationRepository.save(quotation);
+
+        // Send rejection email to provider
+        emailService.sendQuotationRejectedEmail(quotation.getServiceProvider(), quotation);
     }
 
     @Transactional

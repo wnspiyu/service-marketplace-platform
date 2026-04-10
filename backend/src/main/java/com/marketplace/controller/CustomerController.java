@@ -59,6 +59,13 @@ public class CustomerController {
     }
     // Quotation Management
 
+    @GetMapping("/tasks/{taskId}/providers")
+    public ResponseEntity<List<ServiceProviderResponse>> getNotifiedProviders(
+            @PathVariable Long taskId) {
+        List<ServiceProviderResponse> providers = taskService.getNotifiedProviders(taskId);
+        return ResponseEntity.ok(providers);
+    }
+
     @GetMapping("/tasks/{taskId}/quotations")
     public ResponseEntity<List<QuotationResponse>> getTaskQuotations(
             @PathVariable Long taskId) {

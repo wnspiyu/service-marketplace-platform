@@ -1,6 +1,7 @@
 package com.marketplace.service;
 
 import com.marketplace.dto.response.NotificationResponse;
+import com.marketplace.entity.QuotationStatus;
 import com.marketplace.entity.TaskNotification;
 import com.marketplace.entity.TaskStatus;
 import com.marketplace.exception.ResourceNotFoundException;
@@ -27,9 +28,18 @@ public class NotificationService {
         List<TaskNotification> notifications = notificationRepository
                 .findByServiceProviderIdOrderByCreatedAtDesc(providerId);
 
-        // Only show OPEN tasks - hide IN_PROGRESS, COMPLETED, and CANCELLED tasks
         return notifications.stream()
-                .filter(notification -> notification.getTask().getStatus() == TaskStatus.OPEN)
+                .filter(notification -> {
+                    TaskStatus status = notification.getTask().getStatus();
+                    // Always show OPEN tasks
+                    if (status == TaskStatus.OPEN) return true;
+                    // For IN_PROGRESS tasks, only show if this provider's quotation was accepted
+                    if (status == TaskStatus.IN_PROGRESS) {
+                        return quotationRepository.existsByTaskIdAndServiceProviderIdAndStatus(
+                                notification.getTask().getId(), providerId, QuotationStatus.ACCEPTED);
+                    }
+                    return false;
+                })
                 .map(this::mapToNotificationResponse)
                 .collect(Collectors.toList());
     }
@@ -38,7 +48,6 @@ public class NotificationService {
         List<TaskNotification> notifications = notificationRepository
                 .findByServiceProviderIdAndIsViewedFalse(providerId);
 
-        // Only show OPEN tasks - hide IN_PROGRESS, COMPLETED, and CANCELLED tasks
         return notifications.stream()
                 .filter(notification -> notification.getTask().getStatus() == TaskStatus.OPEN)
                 .map(this::mapToNotificationResponse)

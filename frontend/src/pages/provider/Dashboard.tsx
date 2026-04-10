@@ -40,11 +40,13 @@ const ProviderDashboard: React.FC = () => {
       <h1>Provider Dashboard</h1>
 
       <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-        <div className="card" style={{ textAlign: 'center' }}>
-          <h3 style={{ color: '#3498db', fontSize: '2rem' }}>{unviewedCount}</h3>
-          <p>New Notifications</p>
-          <Link to="/provider/notifications" className="btn btn-primary">View</Link>
-        </div>
+        <Link to="/provider/notifications" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="card" style={{ textAlign: 'center', cursor: 'pointer' }}>
+            <h3 style={{ color: '#3498db', fontSize: '2rem' }}>{unviewedCount}</h3>
+            <p>New Notifications</p>
+            <p style={{ color: '#3498db', fontSize: '0.9rem', marginTop: '0.5rem' }}>Click to view →</p>
+          </div>
+        </Link>
 
         <div className="card" style={{ textAlign: 'center' }}>
           <h3 style={{ color: '#f39c12', fontSize: '2rem' }}>{pendingQuotations}</h3>

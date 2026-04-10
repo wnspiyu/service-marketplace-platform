@@ -26,12 +26,14 @@ const TaskDetailsPage: React.FC = () => {
 
   const loadTaskDetails = async () => {
     try {
-      const [taskData, quotationsData] = await Promise.all([
+      const [taskData, quotationsData, providersData] = await Promise.all([
         taskService.getTaskById(Number(taskId!)),
         quotationService.getTaskQuotations(Number(taskId!)),
+        taskService.getNotifiedProviders(Number(taskId!)),
       ]);
       setTask(taskData);
       setQuotations(quotationsData);
+      setProviders(providersData);
     } catch (err) {
       console.error('Failed to load task details', err);
     } finally {
@@ -41,7 +43,7 @@ const TaskDetailsPage: React.FC = () => {
 
   const handleAccept = async (quotationId: number) => {
     try {
-      // await quotationService.acceptQuotation(quotationId);
+      await quotationService.acceptQuotation(quotationId);
       setMessage('Quotation accepted successfully!');
       loadTaskDetails();
     } catch (err) {
@@ -51,7 +53,7 @@ const TaskDetailsPage: React.FC = () => {
 
   const handleReject = async (quotationId: number) => {
     try {
-      // await quotationService.rejectQuotation(quotationId);
+      await quotationService.rejectQuotation(quotationId);
       setMessage('Quotation rejected');
       loadTaskDetails();
     } catch (err) {
@@ -113,14 +115,11 @@ const TaskDetailsPage: React.FC = () => {
             </p>
             <button
               onClick={async () => {
-                if (window.confirm('Are you sure the work has been completed? This will mark the task as finished.')) {
-                  try {
-                    await taskService.updateTaskStatus(task.id, TaskStatus.COMPLETED);
-                    setMessage('Task marked as completed! You can now leave a review.');
-                    loadTaskDetails();
-                  } catch (err: any) {
-                    setError(err.response?.data?.message || 'Failed to update task status');
-                  }
+                try {
+                  await taskService.updateTaskStatus(task.id, TaskStatus.COMPLETED);
+                  navigate('/customer/dashboard');
+                } catch (err: any) {
+                  setError(err.response?.data?.message || 'Failed to update task status');
                 }
               }}
               className="btn btn-success"

@@ -181,6 +181,32 @@ public class EmailService {
     }
 
     @Async
+    public void sendQuotationRejectedEmail(User provider, Quotation quotation) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(provider.getEmail());
+            message.setSubject("Quotation Rejected: " + quotation.getTask().getTitle());
+            message.setText(String.format(
+                    "Dear %s,\n\n" +
+                            "Your quotation for the following task has been rejected by the customer:\n\n" +
+                            "Task: %s\n" +
+                            "Your Price: $%s\n\n" +
+                            "We appreciate your interest and encourage you to continue bidding on other tasks.\n\n" +
+                            "Best regards,\n%s Team",
+                    provider.getFirstName(),
+                    quotation.getTask().getTitle(),
+                    quotation.getPrice(),
+                    appName
+            ));
+
+            mailSender.send(message);
+            logger.info("Quotation rejected email sent to: {}", provider.getEmail());
+        } catch (Exception e) {
+            logger.error("Failed to send quotation rejected email to: {}", provider.getEmail(), e);
+        }
+    }
+
+    @Async
     public void sendQuotationDeclinedEmail(User provider, Quotation quotation) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();

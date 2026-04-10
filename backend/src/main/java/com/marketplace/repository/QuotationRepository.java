@@ -19,6 +19,8 @@ public interface QuotationRepository extends JpaRepository<Quotation, Long> {
 
     boolean existsByTaskIdAndServiceProviderId(Long taskId, Long serviceProviderId);
 
+    boolean existsByTaskIdAndServiceProviderIdAndStatus(Long taskId, Long serviceProviderId, QuotationStatus status);
+
     List<Quotation> findByTaskIdAndStatus(Long taskId, QuotationStatus status);
 
     @Transactional
