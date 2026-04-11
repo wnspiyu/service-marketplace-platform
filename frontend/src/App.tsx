@@ -14,6 +14,7 @@ import ProviderDashboard from './pages/provider/Dashboard';
 import CreateTaskPage from './pages/customer/CreateTask';
 import TaskDetailsPage from './pages/customer/TaskDetails';
 import NotificationsPage from './pages/provider/Notifications';
+import ProviderTaskDetail from './pages/provider/TaskDetail';
 
 function App() {
   return (
@@ -64,6 +65,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole={UserType.SERVICE_PROVIDER}>
               <NotificationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/provider/tasks/:notificationId"
+          element={
+            <ProtectedRoute requiredRole={UserType.SERVICE_PROVIDER}>
+              <ProviderTaskDetail />
             </ProtectedRoute>
           }
         />

@@ -49,6 +49,14 @@ public class CustomerController {
         return ResponseEntity.ok(task);
     }
 
+    @DeleteMapping("/tasks/{taskId}")
+    public ResponseEntity<ApiResponse> deleteTask(
+            @PathVariable Long taskId,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        taskService.deleteTask(taskId, userDetails.getId());
+        return ResponseEntity.ok(ApiResponse.success("Task deleted successfully"));
+    }
+
     @PutMapping("/tasks/{taskId}/status")
     public ResponseEntity<ApiResponse> updateTaskStatus(
             @PathVariable Long taskId,

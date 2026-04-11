@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { taskService } from '../../services/taskService';
 import { Task, TaskStatus } from '../../types/task';
@@ -24,6 +24,7 @@ const TaskDetailsPage: React.FC = () => {
     comment: '',
   });
   const [error, setError] = useState('');
+  const reviewSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (taskId) {
@@ -64,6 +65,7 @@ const TaskDetailsPage: React.FC = () => {
       await quotationService.acceptQuotation(quotationId);
       setMessage('Quotation accepted successfully!');
       loadTaskDetails();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setMessage('Failed to accept quotation');
     }
@@ -142,7 +144,7 @@ const TaskDetailsPage: React.FC = () => {
         <p><strong>Location:</strong> {task.address}</p>
         <p><strong>Status:</strong> <span className={`badge badge-${task.status.toLowerCase()}`}>{task.status}</span></p>
         {task.budgetMin && task.budgetMax && (
-          <p><strong>Budget:</strong> ${task.budgetMin} - ${task.budgetMax}</p>
+          <p><strong>Budget:</strong> LKR {task.budgetMin} - LKR {task.budgetMax}</p>
         )}
         {task.preferredDate && (
           <p><strong>Preferred Date:</strong> {task.preferredDate}</p>
@@ -157,7 +159,11 @@ const TaskDetailsPage: React.FC = () => {
               onClick={async () => {
                 try {
                   await taskService.updateTaskStatus(task.id, TaskStatus.COMPLETED);
-                  navigate('/customer/dashboard');
+                  await loadTaskDetails();
+                  setShowReviewForm(true);
+                  setTimeout(() => {
+                    reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
                 } catch (err: any) {
                   setError(err.response?.data?.message || 'Failed to update task status');
                 }
@@ -182,7 +188,7 @@ const TaskDetailsPage: React.FC = () => {
         )}
 
         {/* Delete Task Button */}
-        {task.status !== TaskStatus.IN_PROGRESS && (
+        {task.status !== TaskStatus.IN_PROGRESS && task.status !== TaskStatus.COMPLETED && (
           <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #ddd' }}>
             <button
               onClick={() => setShowDeleteConfirm(true)}
@@ -195,8 +201,6 @@ const TaskDetailsPage: React.FC = () => {
             <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#666', textAlign: 'center' }}>
               {task.status === TaskStatus.OPEN
                 ? 'You can delete this task since it hasn\'t been accepted yet'
-                : task.status === TaskStatus.COMPLETED
-                ? 'Delete this completed task from your history'
                 : 'You can delete this cancelled task'}
             </p>
           </div>
@@ -277,7 +281,7 @@ const TaskDetailsPage: React.FC = () => {
             }}>
               <h3>{quotation.providerName}</h3>
               {quotation.providerBusinessName && <p><strong>Business:</strong> {quotation.providerBusinessName}</p>}
-              <p><strong>Price:</strong> ${quotation.price}</p>
+              <p><strong>Price:</strong> LKR {quotation.price}</p>
               {quotation.estimatedDuration && <p><strong>Duration:</strong> {quotation.estimatedDuration}</p>}
               {quotation.message && <p><strong>Message:</strong> {quotation.message}</p>}
               <p><strong>Rating:</strong> ⭐ {quotation.providerRating} ({quotation.providerTotalReviews} reviews)</p>
@@ -300,7 +304,7 @@ const TaskDetailsPage: React.FC = () => {
 
       {/* Review Section - Only for Completed Tasks */}
       {task.status === TaskStatus.COMPLETED && (
-        <div className="card">
+        <div className="card" ref={reviewSectionRef}>
           <h2>Service Review</h2>
 
           {review ? (

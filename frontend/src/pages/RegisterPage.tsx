@@ -110,28 +110,32 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="container" style={{ maxWidth: '600px', marginTop: '2rem' }}>
       <div className="card">
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#2c3e50' }}>
-          Create Account
-        </h2>
+        {!success && (
+          <>
+            <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#2c3e50' }}>
+              Create Account
+            </h2>
 
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-          <button
-            type="button"
-            className={`btn ${userType === 'customer' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ flex: 1 }}
-            onClick={() => setUserType('customer')}
-          >
-            Register as Customer
-          </button>
-          <button
-            type="button"
-            className={`btn ${userType === 'provider' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ flex: 1 }}
-            onClick={() => setUserType('provider')}
-          >
-            Register as Provider
-          </button>
-        </div>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+              <button
+                type="button"
+                className={`btn ${userType === 'customer' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1 }}
+                onClick={() => setUserType('customer')}
+              >
+                Register as Customer
+              </button>
+              <button
+                type="button"
+                className={`btn ${userType === 'provider' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ flex: 1 }}
+                onClick={() => setUserType('provider')}
+              >
+                Register as Provider
+              </button>
+            </div>
+          </>
+        )}
 
         {success && (
           <div style={{
@@ -139,8 +143,7 @@ const RegisterPage: React.FC = () => {
             backgroundColor: '#d4edda',
             border: '1px solid #c3e6cb',
             borderRadius: '4px',
-            textAlign: 'center',
-            marginBottom: '2rem'
+            textAlign: 'center'
           }}>
             <div style={{ fontSize: '3rem', color: '#28a745', marginBottom: '1rem' }}>✓</div>
             <h3 style={{ color: '#155724', marginBottom: '1rem' }}>Registration Successful!</h3>
@@ -159,26 +162,8 @@ const RegisterPage: React.FC = () => {
               </p>
               <p style={{ color: '#856404', margin: '0', fontSize: '0.95rem' }}>
                 Please check your email inbox and click the verification link to activate your account.
-                After verification, you can return here to log in.
               </p>
             </div>
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1rem',
-              backgroundColor: '#e7f3ff',
-              borderRadius: '8px',
-              border: '1px solid #b3d9ff'
-            }}>
-              <p style={{ color: '#004085', margin: '0', fontSize: '0.9rem' }}>
-                💡 <strong>Tip:</strong> Check your spam folder if you don't see the email within a few minutes.
-              </p>
-            </div>
-            <p style={{ color: '#6c757d', fontSize: '0.9rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
-              Already verified your email?
-            </p>
-            <Link to="/login" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
-              Go to Login
-            </Link>
           </div>
         )}
 
