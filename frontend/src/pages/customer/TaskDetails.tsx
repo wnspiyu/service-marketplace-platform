@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { taskService } from '../../services/taskService';
 import { Task, TaskStatus } from '../../types/task';
 import { quotationService } from '../../services/quotationService';
-import { Quotation, ServiceProvider } from '../../types/quotation';
+import { Quotation, ServiceProvider, Review } from '../../types/quotation';
+import { reviewService } from '../../services/reviewService';
 import TaskMap from '../../components/TaskMap';
 
 const TaskDetailsPage: React.FC = () => {
@@ -16,6 +17,12 @@ const TaskDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState('');
+  const [review, setReview] = useState<Review | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    comment: '',
+  });
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -34,6 +41,17 @@ const TaskDetailsPage: React.FC = () => {
       setTask(taskData);
       setQuotations(quotationsData);
       setProviders(providersData);
+
+      // Load review if task is completed
+      if (taskData.status === TaskStatus.COMPLETED) {
+        try {
+          const reviewData = await reviewService.getTaskReview(Number(taskId!));
+          setReview(reviewData);
+        } catch (err) {
+          // Review doesn't exist yet, that's okay
+          setReview(null);
+        }
+      }
     } catch (err) {
       console.error('Failed to load task details', err);
     } finally {
@@ -77,6 +95,28 @@ const TaskDetailsPage: React.FC = () => {
       setShowDeleteConfirm(false);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (reviewForm.rating < 1 || reviewForm.rating > 5) {
+      setMessage('Rating must be between 1 and 5');
+      return;
+    }
+
+    try {
+      await reviewService.createReview({
+        taskId: Number(taskId!),
+        rating: reviewForm.rating,
+        comment: reviewForm.comment,
+      });
+      setMessage('Review submitted successfully!');
+      setShowReviewForm(false);
+      loadTaskDetails();
+    } catch (err: any) {
+      setMessage(err.response?.data?.message || 'Failed to submit review');
     }
   };
 
@@ -136,7 +176,7 @@ const TaskDetailsPage: React.FC = () => {
         {task.status === TaskStatus.COMPLETED && (
           <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#d4edda', borderRadius: '4px' }}>
             <p style={{ color: '#155724', marginBottom: '0' }}>
-              ✓ <strong>Task Completed!</strong> The service has been completed.
+              ✓ <strong>Task Completed!</strong> The service has been completed. {!review && 'Please leave a review below to help other customers.'}
             </p>
           </div>
         )}
@@ -188,11 +228,11 @@ const TaskDetailsPage: React.FC = () => {
             <h2 style={{ marginTop: 0, color: '#dc3545' }}>Delete Task?</h2>
             <p style={{ marginBottom: '1.5rem' }}>
               Are you sure you want to delete this task? This action cannot be undone.
-              {/* {quotations.length > 0 && (
+              {quotations.length > 0 && (
                 <span style={{ display: 'block', marginTop: '0.5rem', color: '#dc3545', fontWeight: 'bold' }}>
                   Warning: This task has {quotations.length} quotation{quotations.length > 1 ? 's' : ''} that will also be deleted.
                 </span>
-              )} */}
+              )}
             </p>
             <div style={{ display: 'flex', gap: '1rem' }}>
               <button
@@ -240,7 +280,7 @@ const TaskDetailsPage: React.FC = () => {
               <p><strong>Price:</strong> ${quotation.price}</p>
               {quotation.estimatedDuration && <p><strong>Duration:</strong> {quotation.estimatedDuration}</p>}
               {quotation.message && <p><strong>Message:</strong> {quotation.message}</p>}
-              {/* <p><strong>Rating:</strong> ⭐ {quotation.providerRating} ({quotation.providerTotalReviews} reviews)</p> */}
+              <p><strong>Rating:</strong> ⭐ {quotation.providerRating} ({quotation.providerTotalReviews} reviews)</p>
               <p><strong>Status:</strong> <span className={`badge badge-${quotation.status.toLowerCase()}`}>{quotation.status}</span></p>
 
               {quotation.status === 'PENDING' && (
@@ -257,6 +297,127 @@ const TaskDetailsPage: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Review Section - Only for Completed Tasks */}
+      {task.status === TaskStatus.COMPLETED && (
+        <div className="card">
+          <h2>Service Review</h2>
+
+          {review ? (
+            // Show existing review
+            <div style={{
+              padding: '1.5rem',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px'
+            }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ fontSize: '1.5rem', color: '#ffc107', marginBottom: '0.5rem' }}>
+                  {'⭐'.repeat(review.rating)}
+                  <span style={{ marginLeft: '0.5rem', color: '#666', fontSize: '1rem' }}>
+                    {review.rating}/5
+                  </span>
+                </div>
+              </div>
+              {review.comment && (
+                <p style={{
+                  fontStyle: 'italic',
+                  color: '#495057',
+                  lineHeight: '1.6'
+                }}>
+                  "{review.comment}"
+                </p>
+              )}
+              <p style={{
+                marginTop: '1rem',
+                fontSize: '0.9rem',
+                color: '#6c757d'
+              }}>
+                Reviewed on {new Date(review.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          ) : (
+            // Show review form
+            <div>
+              {!showReviewForm ? (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <p style={{ color: '#6c757d', marginBottom: '1.5rem' }}>
+                    Share your experience with this service provider
+                  </p>
+                  <button
+                    onClick={() => setShowReviewForm(true)}
+                    className="btn btn-primary"
+                  >
+                    Write a Review
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitReview}>
+                  <div className="form-group">
+                    <label>Rating *</label>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.2)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }}
+                          style={{
+                            fontSize: '2.5rem',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            filter: star <= reviewForm.rating ? 'none' : 'grayscale(100%)',
+                            opacity: star <= reviewForm.rating ? 1 : 0.3,
+                          }}
+                        >
+                          ⭐
+                        </button>
+                      ))}
+                      <span style={{ marginLeft: '1rem', color: '#666', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                        {reviewForm.rating}/5
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
+                      Click on a star to rate
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="comment">Your Review</label>
+                    <textarea
+                      id="comment"
+                      value={reviewForm.comment}
+                      onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                      rows={5}
+                      placeholder="Share your experience with this service provider..."
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button type="submit" className="btn btn-primary">
+                      Submit Review
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewForm(false)}
+                      className="btn btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

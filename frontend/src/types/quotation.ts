@@ -52,3 +52,22 @@ export interface CreateQuotationRequest {
   estimatedDuration?: string;
   message?: string;
 }
+
+export interface Review {
+id: number;
+taskId: number;
+taskTitle: string;
+customerId: number;
+customerName: string;
+serviceProviderId: number;
+providerName: string;
+rating: number;
+comment?: string;
+createdAt: string;
+}
+
+export interface CreateReviewRequest {
+taskId: number;
+rating: number;
+comment?: string;
+}
