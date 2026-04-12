@@ -1,0 +1,11 @@
+src/
+public/
+node_modules/
+.git/
+.idea/
+*.md
+*.iml
+.gitignore
+.env*
+package*.json
+tsconfig.json
