@@ -119,3 +119,54 @@ jobs:
           tags: ${{ env.IMAGE_REPO }}:frontend-latest
           cache-from: type=gha
           cache-to:   type=gha,mode=max
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: [docker-push-backend, docker-push-frontend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          source:   "docker-compose.demo.yml,database/init.sql,database/schema.sql,database/seed-data.sql"
+          target:   "~/app"
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1
+        env:
+          DB_PASSWORD:    ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET:     ${{ secrets.JWT_SECRET }}
+          MAIL_USERNAME:  ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD:  ${{ secrets.MAIL_PASSWORD }}
+          APP_BASE_URL:   http://${{ secrets.EC2_HOST }}:3000
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
+        with:
+          host:     ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          envs:     DB_PASSWORD,JWT_SECRET,MAIL_USERNAME,MAIL_PASSWORD,APP_BASE_URL,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
+          script: |
+            set -e
+            cd ~/app
+
+            # Write .env from GitHub secrets
+            printf 'DB_PASSWORD=%s\n'   "$DB_PASSWORD"   >  .env
+            printf 'JWT_SECRET=%s\n'    "$JWT_SECRET"    >> .env
+            printf 'MAIL_USERNAME=%s\n' "$MAIL_USERNAME" >> .env
+            printf 'MAIL_PASSWORD=%s\n' "$MAIL_PASSWORD" >> .env
+            printf 'APP_BASE_URL=%s\n'  "$APP_BASE_URL"  >> .env
+
+            # Log in to Docker Hub to pull private images
+            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+            docker compose -f docker-compose.demo.yml pull
+            docker compose -f docker-compose.demo.yml up -d --remove-orphans
+            docker image prune -f

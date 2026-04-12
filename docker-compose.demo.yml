@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: marketplace_postgres
+    environment:
+      POSTGRES_DB: service_marketplace_db
+      POSTGRES_USER: marketplace_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      - ./database/seed-data.sql:/docker-entrypoint-initdb.d/03-seed-data.sql
+    networks:
+      - marketplace_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketplace_admin -d service_marketplace_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: nipuniit/service-market-place:backend-latest
+    container_name: marketplace_backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/service_marketplace_db
+      SPRING_DATASOURCE_USERNAME: marketplace_admin
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: 86400000
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
+      APP_BASE_URL: ${APP_BASE_URL}
+      LOGGING_LEVEL_ROOT: WARN
+      LOGGING_LEVEL_COM_MARKETPLACE: INFO
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: WARN
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: WARN
+    ports:
+      - "8080:8080"
+    networks:
+      - marketplace_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    image: nipuniit/service-market-place:frontend-latest
+    container_name: marketplace_frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - marketplace_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  marketplace_network:
+    driver: bridge
