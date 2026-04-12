@@ -78,13 +78,16 @@ frontend/
         ├── LoginPage.tsx
         ├── RegisterPage.tsx
         ├── VerifyEmailPage.tsx
+        ├── ForgotPasswordPage.tsx     <- Email entry form for password reset
+        ├── ResetPasswordPage.tsx      <- New password form (reads ?token= from URL)
         ├── customer/
         │   ├── Dashboard.tsx          <- Customer task list
         │   ├── CreateTask.tsx         <- Task creation form
         │   └── TaskDetails.tsx        <- Task detail, quotations, map, review
         └── provider/
-            ├── Dashboard.tsx          <- Provider stats and recent activity
-            └── Notifications.tsx      <- Task notifications and quotation submission
+            ├── Dashboard.tsx          <- Provider stats with clickable tab panels
+            ├── Notifications.tsx      <- Task notification list with inline actions
+            └── TaskDetail.tsx         <- Single task detail with quotation form
 ```
 
 **Why split pages into `customer/` and `provider/` subfolders?**
@@ -119,6 +122,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <Route path="/login"                 element={<LoginPage />} />
     <Route path="/register"              element={<RegisterPage />} />
     <Route path="/verify-email/:token"   element={<VerifyEmailPage />} />
+    <Route path="/forgot-password"       element={<ForgotPasswordPage />} />
+    <Route path="/reset-password"        element={<ResetPasswordPage />} />
 
     <Route path="/customer/dashboard"    element={<ProtectedRoute requiredRole="CUSTOMER"><CustomerDashboard /></ProtectedRoute>} />
     <Route path="/customer/create-task"  element={<ProtectedRoute requiredRole="CUSTOMER"><CreateTask /></ProtectedRoute>} />
@@ -126,6 +131,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
     <Route path="/provider/dashboard"    element={<ProtectedRoute requiredRole="SERVICE_PROVIDER"><ProviderDashboard /></ProtectedRoute>} />
     <Route path="/provider/notifications" element={<ProtectedRoute requiredRole="SERVICE_PROVIDER"><Notifications /></ProtectedRoute>} />
+    <Route path="/provider/tasks/:notificationId" element={<ProtectedRoute requiredRole="SERVICE_PROVIDER"><ProviderTaskDetail /></ProtectedRoute>} />
 
     <Route path="/" element={<Navigate to="/login" />} />
   </Routes>
@@ -349,15 +355,25 @@ The distance shown in each provider popup is calculated client-side using the sa
 
 Renders an email and password form. On submit, calls `authContext.login()`. On success, redirects to the correct dashboard based on `user.userType`. On failure, displays the error message from the API response.
 
+A centred "Forgot password?" link below the Login button navigates to `/forgot-password`. If the user arrives here after successfully resetting their password, a success message is shown (passed via React Router navigation state).
+
 ### 9.2 `RegisterPage.tsx`
 
-Renders a toggle between two registration forms: Customer and Provider.
+Renders a toggle between two registration forms: Customer and Provider. The title and role-selection buttons are only shown while the form is visible; they are hidden once registration succeeds.
 
 **Customer form fields:** email, password, first name, last name, phone number, address
 
 **Provider form fields:** all customer fields plus category (dropdown loaded from `GET /categories`), business name, bio, years of experience, service radius, and a `LocationPicker` component for setting the provider's location.
 
-On successful registration, the user is immediately logged in (the API returns a JWT) and redirected to their dashboard. A message is shown advising them to verify their email.
+On successful registration, the form and header are replaced with a success message showing the email address and instructions to verify. No login link is shown on the success screen; the user navigates away manually.
+
+### 9.2a `ForgotPasswordPage.tsx`
+
+Accessible at `/forgot-password`. Renders a single email input. On submit, calls `authService.forgotPassword(email)`. On success, replaces the form with a confirmation message. The backend sends the reset link even if the email is not found (to prevent email enumeration), so success is shown regardless.
+
+### 9.2b `ResetPasswordPage.tsx`
+
+Accessible at `/reset-password?token=<uuid>`. Reads the token from the URL query string using `useSearchParams`. Renders new password and confirm password fields. On submit, calls `authService.resetPassword(token, newPassword)`. On success, navigates to `/login` with a success message in router state.
 
 ### 9.3 `VerifyEmailPage.tsx`
 
@@ -389,16 +405,32 @@ The page renders:
 - A status update button to mark the task as `COMPLETED` once it is `IN_PROGRESS`
 - A review form (rating 1-5 and optional comment) after the task is completed and no review exists yet
 
-Accepting a quotation refreshes the task and quotation data to reflect the updated statuses.
+Accepting a quotation refreshes the task data and scrolls to the top of the page so the customer can immediately see the updated status and the "Mark as Completed" button.
+
+Marking a task as completed keeps the user on the same page, auto-opens the review form, and smoothly scrolls down to the review section. Leaving a review is optional.
+
+The Delete Task button is hidden for tasks with `COMPLETED` status — completed tasks cannot be deleted.
 
 ### 9.7 Provider `Dashboard.tsx`
 
-Loads provider quotations and reviews on mount. Displays:
-- Three summary stat cards: unviewed notification count, pending quotation count, and accepted quotation count
-- A recent quotations list with task names, submitted prices, and status badges
-- A recent reviews list with ratings and customer comments
+Loads provider quotations, reviews, and all notifications on mount. Displays four clickable stat cards at the top:
 
-This page gives the provider a summary of their current activity. The notification count uses a separate `GET /provider/notifications/unviewed-count` call so it updates independently.
+| Card | Colour | Detail panel when clicked |
+|---|---|---|
+| New Notifications | Blue | Open tasks with no quotation submitted yet |
+| Pending Quotations | Orange | All quotations with status `PENDING` |
+| Accepted Quotations | Green | All quotations with status `ACCEPTED` |
+| Total Reviews | Red | All reviews received |
+
+Clicking a card toggles a detail panel below the stat cards. Clicking the same card again collapses it. Active cards are highlighted with a blue border.
+
+When no card is active (default view), two summary sections appear below the stats:
+- **Recent Quotations** — the two most recent quotations with task name, price, and status badge
+- **Recent Reviews** — the two most recent reviews with customer name and rating
+
+These summary sections are hidden while any tab panel is open.
+
+Clicking a task in the New Notifications panel navigates to `/provider/tasks/:notificationId` with the notification data passed via router state.
 
 ### 9.8 Provider `Notifications.tsx`
 
@@ -406,14 +438,28 @@ Loads all notifications on mount using `notificationService.getNotifications()`.
 - Task title, category, description, address, budget range, preferred date
 - Distance from the provider to the task
 - Time the notification was created
-- Whether the provider has already submitted a quote (shown as a badge)
-- A Quote button and a Decline button
+- Status badges: `QUOTATION SUBMITTED` or `DECLINED`
+- For actionable tasks: a **Submit Quote** button and a **Decline** button
 
-Clicking **Quote** opens a modal form with fields for price, estimated duration, and an optional message. The form uses `quotationService.submitQuotation()`. On success, the notification card updates to show the quote-submitted badge.
+Clicking **Submit Quote** navigates to `/provider/tasks/:notificationId` passing the notification as router state, where the quotation form is shown on a dedicated page.
 
-Clicking **Decline** calls `notificationService.declineTask()` and updates the card's status locally without re-fetching the full list.
+Clicking **Decline** calls `notificationService.declineTask()` immediately (no confirmation dialog) and reloads the list. The card then shows the `DECLINED` badge with a disabled button.
 
-When the page mounts, all loaded notifications are automatically marked as viewed via `notificationService.markAsViewed()`.
+Unread notifications are highlighted with a blue left border and a light blue background.
+
+### 9.9 Provider `TaskDetail.tsx`
+
+Accessible at `/provider/tasks/:notificationId`. Receives the full notification object from router state (passed by the dashboard or the notifications list). If no state is available, fetches all notifications and finds the matching one by ID.
+
+Marks the notification as viewed on mount if not already viewed.
+
+Renders:
+- Task details card (category, customer name, location, distance, budget, preferred date, description)
+- Quotation form card with fields for price (LKR), estimated duration (days), and optional message; plus **Submit Quotation** and **Decline Task** buttons
+- If already quoted: a confirmation message
+- If already declined: a declined message
+
+On submit or decline, navigates back using the browser history (`navigate(-1)`), returning the user to whichever page they came from (dashboard or notifications list).
 
 ---
 
@@ -461,11 +507,14 @@ For an application of this scope and team size, a full CSS framework adds learni
 | `/login` | `LoginPage` | Public |
 | `/register` | `RegisterPage` | Public |
 | `/verify-email/:token` | `VerifyEmailPage` | Public |
+| `/forgot-password` | `ForgotPasswordPage` | Public |
+| `/reset-password` | `ResetPasswordPage` | Public |
 | `/customer/dashboard` | `CustomerDashboard` | CUSTOMER role |
 | `/customer/create-task` | `CreateTask` | CUSTOMER role |
 | `/customer/tasks/:taskId` | `TaskDetails` | CUSTOMER role |
 | `/provider/dashboard` | `ProviderDashboard` | SERVICE_PROVIDER role |
 | `/provider/notifications` | `Notifications` | SERVICE_PROVIDER role |
+| `/provider/tasks/:notificationId` | `ProviderTaskDetail` | SERVICE_PROVIDER role |
 | `/` | Redirects to `/login` | - |
 
 ### 11.2 Navigation After Login
@@ -508,22 +557,24 @@ The `LocationPicker` component calls `navigator.geolocation.getCurrentPosition()
 
 **Customer journey:**
 
-1. `/register` (RegisterPage): fills customer form, submits, gets JWT, redirected to `/customer/dashboard`
+1. `/register` (RegisterPage): fills customer form, submits; success screen shows with email verification prompt
 2. `/verify-email/:token` (VerifyEmailPage): clicks link in email, token is verified automatically
-3. `/customer/create-task` (CreateTask): fills task form including location via `LocationPicker`, submits
-4. `/customer/dashboard` (Dashboard): sees task appear in list with status `OPEN`
-5. `/customer/tasks/:taskId` (TaskDetails): opens task, sees `TaskMap` with notified providers, waits for quotations
-6. `/customer/tasks/:taskId` (TaskDetails): quotations arrive, reviews each provider's rating and price, accepts one
-7. `/customer/tasks/:taskId` (TaskDetails): work is done, marks task as `COMPLETED`
-8. `/customer/tasks/:taskId` (TaskDetails): review form appears, submits rating and comment
+3. `/login` (LoginPage): logs in after verifying email
+4. `/customer/create-task` (CreateTask): fills task form including location via `LocationPicker`, submits
+5. `/customer/dashboard` (Dashboard): sees task appear in list with status `OPEN`
+6. `/customer/tasks/:taskId` (TaskDetails): opens task, sees `TaskMap` with notified providers, waits for quotations
+7. `/customer/tasks/:taskId` (TaskDetails): quotations arrive, reviews each provider's rating and price, accepts one; page scrolls to top to show `IN_PROGRESS` status
+8. `/customer/tasks/:taskId` (TaskDetails): work is done, marks task as `COMPLETED`; page scrolls to review section automatically
+9. `/customer/tasks/:taskId` (TaskDetails): optionally submits a rating and comment
 
 **Provider journey:**
 
 1. `/register` (RegisterPage): fills provider form including category, location via `LocationPicker`, service radius, submits
 2. `/provider/notifications` (Notifications): new task notification appears, reads task details and distance
-3. `/provider/notifications` (Notifications): clicks Quote, fills price and message in modal, submits
-4. `/provider/dashboard` (Dashboard): accepted quotation count increments when customer accepts
-5. `/provider/dashboard` (Dashboard): review appears in recent reviews list after customer submits one
+3. `/provider/tasks/:notificationId` (TaskDetail): clicks Submit Quote, sees full task details and quotation form on a dedicated page
+4. `/provider/tasks/:notificationId` (TaskDetail): fills price, duration, and message; submits; returns to previous page
+5. `/provider/dashboard` (Dashboard): accepted quotation count increments when customer accepts
+6. `/provider/dashboard` (Dashboard): review appears in recent reviews list after customer submits one
 
 ---
 

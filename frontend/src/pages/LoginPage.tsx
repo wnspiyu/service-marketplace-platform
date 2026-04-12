@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserType } from '../types/user';
 
@@ -11,6 +11,8 @@ const LoginPage: React.FC = () => {
 
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const successMessage = (location.state as any)?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +42,10 @@ const LoginPage: React.FC = () => {
         <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#2c3e50' }}>
           Login to Service Marketplace
         </h2>
+
+        {successMessage && (
+          <div className="success-message">{successMessage}</div>
+        )}
 
         {error && (
           <div className={error.toLowerCase().includes('email not verified') || error.toLowerCase().includes('verify') ? 'warning-message' : 'error-message'}>
@@ -85,6 +91,12 @@ const LoginPage: React.FC = () => {
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+            <Link to="/forgot-password" style={{ color: '#3498db', fontSize: '0.9rem' }}>
+              Forgot password?
+            </Link>
+          </div>
         </form>
 
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>

@@ -333,14 +333,6 @@ const RegisterPage: React.FC = () => {
           </button>
         </form>}
 
-        {!success && <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <p style={{ color: '#7f8c8d' }}>
-            Already have an account?{' '}
-            <Link to="/login" style={{ color: '#3498db', textDecoration: 'none' }}>
-              Login here
-            </Link>
-          </p>
-        </div>}
       </div>
     </div>
   );
