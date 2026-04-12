@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build JAR
-        run: cd backend && ./mvnw clean install -DskipTests -B
+        run: cd backend && mvn clean install -DskipTests -B
 
       - name: Rename JAR for Docker
         run: cp backend/target/*.jar backend/app.jar
@@ -45,6 +45,7 @@ jobs:
         run: cd frontend && npm run build
         env:
           REACT_APP_API_URL: http://${{ secrets.EC2_HOST }}:8080/api
+          CI: false
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
