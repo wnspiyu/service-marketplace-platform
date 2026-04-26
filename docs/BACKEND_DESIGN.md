@@ -187,9 +187,9 @@ Grouping all customer endpoints under `/api/customer/` and all provider endpoint
 
 ### 5.6 `CorsConfig`
 
-Allowed origins: `http://localhost:3000`
+Allowed origins: `http://localhost:3000` and the value of `app.base-url` from `application.properties`.
 
-These are the frontend development server addresses. In production, this list would be replaced with the deployed frontend domain.
+`localhost:3000` covers local development. `app.base-url` covers the deployed frontend URL (set in the environment-specific properties file) without needing a code change between environments. All HTTP methods are allowed (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`). The `Authorization` header is exposed so the frontend can read the JWT from responses. `allowCredentials` is `true` and `maxAge` is 3600 seconds.
 
 ---
 
@@ -390,7 +390,13 @@ The database constraint is the ultimate safety net. The application-level check 
 
 ### 8.6 `NotificationService`
 
-Loads `TaskNotification` records for a provider. Applies an additional filter: only returns notifications for tasks that are still `OPEN`. A provider does not need to see notifications for tasks that are already `IN_PROGRESS` (assigned to someone else) or `COMPLETED`.
+Loads `TaskNotification` records for a provider and applies a visibility filter before returning them:
+
+- **`OPEN` tasks** — always included (the provider can still quote)
+- **`IN_PROGRESS` tasks** — included only if this specific provider's quotation was `ACCEPTED` (so the winning provider can track their active job)
+- **`COMPLETED` or `CANCELLED` tasks** — excluded; no further action is possible
+
+A provider does not see notifications for `IN_PROGRESS` tasks they were not selected for, preventing confusion when another provider was chosen.
 
 The `mapToNotificationResponse` method:
 - Calculates the distance from the provider's location to the task location using `LocationService`

@@ -342,8 +342,17 @@ AuthService.resetPassword():
 ## 7. Security Properties in `application.properties`
 
 ```properties
-jwt.secret=marketplace_secret_key_2025_must_be_at_least_256_bits_long_for_hs256_algorithm
+jwt.secret=<base64-encoded-hmac-sha256-key>
 jwt.expiration=86400000
 ```
 
-The secret key is at least 256 bits (32 characters) as required for HMAC SHA256. The expiration is 86,400,000 milliseconds which is exactly 24 hours. After 24 hours, the token is rejected by `validateToken()` with an `ExpiredJwtException` and the user must log in again.
+The secret key is a Base64-encoded HMAC-SHA256 key. It must be at least 256 bits long to satisfy the HS256 algorithm's minimum key length requirement. The value is read from `application.properties` (or an environment variable in production) and initialised at startup:
+
+```java
+@PostConstruct
+public void init() {
+    this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+}
+```
+
+The expiration is 86,400,000 milliseconds, exactly 24 hours. After 24 hours, the token is rejected by `validateToken()` with an `ExpiredJwtException` and the user must log in again. The Axios response interceptor on the frontend catches the resulting `401` and redirects to `/login` automatically.

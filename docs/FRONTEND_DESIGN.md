@@ -342,10 +342,10 @@ Used on the `TaskDetails` page. It takes a `task` object and an optional `provid
 
 - A red marker at the task's location with a popup showing the task title and address
 - A circle representing the task's search radius
-- Green markers for each notified provider, with popups showing provider name, rating, business name, and distance from the task
+- Green markers for each notified provider, with popups showing provider name, business name, and distance from the task
 - A map legend explaining the marker colours
 
-The distance shown in each provider popup is calculated client-side using the same Haversine formula as the backend, applied to the task coordinates and the provider coordinates returned in the API response.
+The distance shown in each provider popup comes directly from the `distanceKm` field included in the `ServiceProviderResponse` returned by `GET /customer/tasks/{taskId}/providers`. The backend calculates this value using the Haversine formula in `LocationService` before sending the response. The frontend renders the number as-is and does not recalculate it.
 
 ---
 
@@ -547,9 +547,9 @@ The `nominatimService.ts` wraps the Nominatim API for all text-to-coordinates an
 
 The `LocationPicker` component calls `navigator.geolocation.getCurrentPosition()` when the user presses the current location button. The browser displays its standard permission prompt. If the user allows it, the coordinates are passed to Nominatim for reverse geocoding. If the user denies it, the error is caught and no change is made.
 
-### 12.3 Haversine on the Client
+### 12.3 Distance Display in `TaskMap.tsx`
 
-`TaskMap.tsx` calculates the distance between the task and each provider for display in the provider popup. It applies the Haversine formula directly in the component using the coordinates from the API responses. This mirrors the calculation the backend does during provider matching, so the displayed distance is consistent with the radius-based filtering logic.
+`TaskMap.tsx` does not calculate distances. Each `ServiceProviderResponse` returned by `GET /customer/tasks/{taskId}/providers` already contains a `distanceKm` field calculated by the backend (`LocationService.calculateDistance()` using the Haversine formula). The component reads this field and renders it in the provider popup. This ensures the displayed distance is exactly consistent with the radius-based matching that determined which providers were notified in the first place.
 
 ---
 

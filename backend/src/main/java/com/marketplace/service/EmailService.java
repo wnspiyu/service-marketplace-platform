@@ -91,7 +91,7 @@ public class EmailService {
                             "Title: %s\n" +
                             "Description: %s\n" +
                             "Location: %s\n" +
-                            "Budget: $%s - $%s\n\n" +
+                            "Budget: LKR%s - LKR%s\n\n" +
                             "Please login to view full details and submit your quotation.\n\n" +
                             "View Task: %s/provider/notifications\n\n" +
                             "Best regards,\n%s Team",
@@ -123,7 +123,7 @@ public class EmailService {
                             "You have received a new quotation for your task:\n\n" +
                             "Task: %s\n" +
                             "Provider: %s %s\n" +
-                            "Price: $%s\n" +
+                            "Price: LKR%s\n" +
                             "Estimated Duration: %s\n" +
                             "Message: %s\n\n" +
                             "Login to view full details and accept/reject the quotation.\n\n" +
@@ -158,7 +158,7 @@ public class EmailService {
                     "Dear %s,\n\n" +
                             "Congratulations! Your quotation has been accepted.\n\n" +
                             "Task: %s\n" +
-                            "Your Price: $%s\n" +
+                            "Your Price: LKR%s\n" +
                             "Customer: %s %s\n" +
                             "Contact: %s\n\n" +
                             "Please contact the customer to arrange the service delivery.\n\n" +
@@ -190,7 +190,7 @@ public class EmailService {
                     "Dear %s,\n\n" +
                             "Your quotation for the following task has been rejected by the customer:\n\n" +
                             "Task: %s\n" +
-                            "Your Price: $%s\n\n" +
+                            "Your Price: LKR%s\n\n" +
                             "We appreciate your interest and encourage you to continue bidding on other tasks.\n\n" +
                             "Best regards,\n%s Team",
                     provider.getFirstName(),
@@ -216,7 +216,7 @@ public class EmailService {
                     "Dear %s,\n\n" +
                             "Thank you for submitting your quotation for the following task:\n\n" +
                             "Task: %s\n" +
-                            "Your Price: $%s\n\n" +
+                            "Your Price: LKR%s\n\n" +
                             "Unfortunately, the customer has selected another provider for this task.\n\n" +
                             "We appreciate your interest and encourage you to continue bidding on other tasks.\n\n" +
                             "Best regards,\n%s Team",
