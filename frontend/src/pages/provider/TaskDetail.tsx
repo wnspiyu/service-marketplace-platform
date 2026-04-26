@@ -105,7 +105,7 @@ const ProviderTaskDetail: React.FC = () => {
 
       {notification.hasQuotation ? (
         <div className="card" style={{ backgroundColor: '#d4edda', color: '#155724' }}>
-          <p>✓ You have already submitted a quotation for this task.</p>
+          <p>You have already submitted a quotation for this task.</p>
         </div>
       ) : notification.isDeclined ? (
         <div className="card" style={{ backgroundColor: '#f8d7da', color: '#721c24' }}>

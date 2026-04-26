@@ -36,7 +36,6 @@ const ForgotPasswordPage: React.FC = () => {
             borderRadius: '4px',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: '2.5rem', color: '#28a745', marginBottom: '0.75rem' }}>✓</div>
             <p style={{ color: '#155724', marginBottom: '0' }}>
               Password reset email sent to <strong>{email}</strong>. Please check your inbox and follow the link to reset your password.
             </p>

@@ -145,7 +145,6 @@ const RegisterPage: React.FC = () => {
             borderRadius: '4px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '3rem', color: '#28a745', marginBottom: '1rem' }}>✓</div>
             <h3 style={{ color: '#155724', marginBottom: '1rem' }}>Registration Successful!</h3>
             <p style={{ color: '#155724', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
               We've sent a verification email to <strong>{formData.email}</strong>
@@ -158,7 +157,7 @@ const RegisterPage: React.FC = () => {
               borderRadius: '8px'
             }}>
               <p style={{ color: '#856404', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-                📧 Important: Verify your email before logging in
+                Important: Verify your email before logging in
               </p>
               <p style={{ color: '#856404', margin: '0', fontSize: '0.95rem' }}>
                 Please check your email inbox and click the verification link to activate your account.

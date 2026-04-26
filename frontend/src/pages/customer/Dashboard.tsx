@@ -92,7 +92,7 @@ const CustomerDashboard: React.FC = () => {
                   <p><strong>Quotations Received:</strong> {task.quotationCount}</p>
                   {task.status === TaskStatus.COMPLETED && (
                     <p style={{ color: '#4caf50', fontWeight: 'bold', marginTop: '0.5rem' }}>
-                      ✓ Task completed successfully
+                      Task completed successfully
                     </p>
                   )}
                 </div>

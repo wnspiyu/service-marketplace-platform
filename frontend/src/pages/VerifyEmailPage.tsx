@@ -73,9 +73,6 @@ const VerifyEmailPage: React.FC = () => {
 
         {status === 'success' && (
           <>
-            <div style={{ fontSize: '4rem', color: '#27ae60', marginBottom: '1rem' }}>
-              ✓
-            </div>
             <h2 style={{ color: '#27ae60' }}>Email Verified!</h2>
             <p style={{ fontSize: '1.1rem', color: '#2c3e50' }}>{message}</p>
             <div style={{
@@ -97,9 +94,6 @@ const VerifyEmailPage: React.FC = () => {
 
         {status === 'error' && (
           <>
-            <div style={{ fontSize: '4rem', color: '#e74c3c', marginBottom: '1rem' }}>
-              ✗
-            </div>
             <h2 style={{ color: '#e74c3c' }}>Verification Failed</h2>
             <p>{message}</p>
             <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>

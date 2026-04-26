@@ -153,7 +153,7 @@ const TaskDetailsPage: React.FC = () => {
         {task.status === TaskStatus.IN_PROGRESS && (
           <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#fff3cd', borderRadius: '4px' }}>
             <p style={{ color: '#856404', marginBottom: '1rem' }}>
-              🔧 <strong>Work in Progress</strong> - The service provider is working on this task.
+              <strong>Work in Progress</strong> - The service provider is working on this task.
             </p>
             <button
               onClick={async () => {
@@ -182,7 +182,7 @@ const TaskDetailsPage: React.FC = () => {
         {task.status === TaskStatus.COMPLETED && (
           <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#d4edda', borderRadius: '4px' }}>
             <p style={{ color: '#155724', marginBottom: '0' }}>
-              ✓ <strong>Task Completed!</strong> The service has been completed. {!review && 'Please leave a review below to help other customers.'}
+              <strong>Task Completed!</strong> The service has been completed. {!review && 'Please leave a review below to help other customers.'}
             </p>
           </div>
         )}
